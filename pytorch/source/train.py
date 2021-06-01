@@ -48,9 +48,8 @@ if __name__ == "__main__":
     parser.add_argument("--output-data-dir", type=str, default=os.environ["SM_OUTPUT_DATA_DIR"])
     parser.add_argument("--model-dir", type=str, default=os.environ["SM_MODEL_DIR"])
     parser.add_argument("--n_gpus", type=str, default=os.environ["SM_NUM_GPUS"])
-    parser.add_argument("--train", type=str, default=os.environ["SM_CHANNEL_TRAINING"])
-    parser.add_argument("--test", type=str, default=os.environ["SM_CHANNEL_TESTING"])
-    parser.add_argument("--val", type=str, default=os.environ["SM_CHANNEL_VALIDATING"])
+    parser.add_argument("--train", type=str, default=os.environ["SM_CHANNEL_TRAIN"])
+    parser.add_argument("--test", type=str, default=os.environ["SM_CHANNEL_TEST"])
 
     args, _ = parser.parse_known_args()
 
@@ -68,25 +67,17 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
 
     # Load dataset
-    train_data = pd.read_csv(os.path.join(args.train, 'data.csv'))
-    val_data = pd.read_csv(os.path.join(args.val, 'data.csv'))
-    test_data = pd.read_csv(os.path.join(args.test, 'data.csv'))
-
-    train_data = train_data.sample(150)
-    val_data = val_data.sample(150)
-    test_data = test_data.sample(150)
+    train_data = pd.read_csv(os.path.join(args.train, 'train.csv'))
+    test_data = pd.read_csv(os.path.join(args.test, 'test.csv'))
 
     # Tokenize
     train_texts, train_labels = train_data['text'].tolist(), train_data['label'].tolist()
-    val_texts, val_labels = val_data['text'].tolist(), val_data['label'].tolist()
     test_texts, test_labels = test_data['text'].tolist(), test_data['label'].tolist()
     train_encodings = tokenizer(train_texts, truncation=True, padding=True)
-    val_encodings = tokenizer(val_texts, truncation=True, padding=True)
     test_encodings = tokenizer(test_texts, truncation=True, padding=True)
 
     # Preprocess train dataset
     train_dataset = IMDbDataset(train_encodings, train_labels)
-    val_dataset = IMDbDataset(val_encodings, val_labels)
     test_dataset = IMDbDataset(test_encodings, test_labels)
 
     # define training args
@@ -125,42 +116,3 @@ if __name__ == "__main__":
     # Saves the model to s3
     trainer.save_model(args.model_dir)
     tokenizer.save_pretrained(args.model_dir)
-
-
-def model_fn(model_dir):
-    config = AutoConfig.from_pretrained(os.path.join(model_dir, 'config.json'))
-    model = AutoModelForSequenceClassification.from_pretrained(os.path.join(model_dir, 'pytorch_model.bin'),
-                                                               config=config)
-
-    return model
-
-
-def input_fn(request_body, request_content_type):
-    """An input_fn that loads a pickled tensor"""
-    if request_content_type == "application/json":
-        data = json.loads(request_body)
-        print("================ input sentences ===============")
-        print(data)
-
-        if isinstance(data, str):
-            data = [data]
-        elif isinstance(data, list) and len(data) > 0 and isinstance(data[0], str):
-            pass
-        else:
-            raise ValueError("Unsupported input type. Input type can be a string or an non-empty list. \
-                             I got {}".format(data))
-
-        return data
-    raise ValueError("Unsupported content type: {}".format(request_content_type))
-
-
-def predict_fn(input_data, model):
-    tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
-    tokenized_input = tokenizer(input_data, truncation=True, padding=True)
-    model.eval()
-
-    with torch.no_grad():
-        y = model(**tokenized_input)[0]
-        print("=============== inference result =================")
-        print(y)
-    return y
