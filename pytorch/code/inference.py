@@ -57,7 +57,9 @@ def input_fn(request_body, request_content_type):
                              I got {}".format(data))
 
     elif request_content_type == "text/csv":
-        df = pd.read_csv(io.StringIO(request_body))
+        df = pd.read_csv(io.StringIO(request_body), header=None)
+        print(df.columns)
+        df.columns = ['text', 'label']
         data = df['text'].tolist()
 
     else:
@@ -69,10 +71,11 @@ def input_fn(request_body, request_content_type):
 def predict_fn(input_data, model):
     tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
     tokenized_input = tokenizer(input_data, truncation=True, padding=True)
+    input_ids = torch.Tensor(tokenized_input['input_ids']).long()
+    attention_masks = torch.Tensor(tokenized_input['attention_mask']).long()
     model.eval()
-
     with torch.no_grad():
-        y = model(**tokenized_input)[0]
+        y = model(input_ids=input_ids, attention_mask=attention_masks)[0]
         print("=============== inference result =================")
         print(y)
     return y
