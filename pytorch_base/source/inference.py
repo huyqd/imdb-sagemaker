@@ -1,14 +1,10 @@
-import argparse
 import io
 import json
-import logging
-import os
-import sys
 
 import pandas as pd
 import torch
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-from transformers import AutoModelForSequenceClassification, Trainer, TrainingArguments, AutoTokenizer, AutoConfig
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
 
 class IMDbDataset(torch.utils.data.Dataset):
     def __init__(self, encodings, labels):
@@ -35,7 +31,7 @@ def input_fn(request_body, request_content_type):
     """An input_fn that loads a pickled tensor"""
     if request_content_type == "application/json":
         data = json.loads(request_body)
-        
+
         if isinstance(data, str):
             data = [data]
         elif isinstance(data, list) and len(data) > 0 and isinstance(data[0], str):
@@ -59,15 +55,15 @@ def input_fn(request_body, request_content_type):
 def predict_fn(input_data, model):
     model, tokenizer = model
     tokenized_input = tokenizer(input_data, truncation=True, padding=True)
-    
+
     input_ids = torch.Tensor(tokenized_input['input_ids']).long()
     attention_masks = torch.Tensor(tokenized_input['attention_mask']).long()
-    
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     input_ids.to(device)
     attention_masks.to(device)
-    
+
     model.eval()
     with torch.no_grad():
         logits = model(input_ids=input_ids, attention_mask=attention_masks).logits
