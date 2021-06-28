@@ -22,7 +22,7 @@ class IMDbDataset(torch.utils.data.Dataset):
 
 def model_fn(model_dir):
     model = AutoModelForSequenceClassification.from_pretrained(model_dir)
-    tokenizer = AutoTokenizer.from_pretrained(model_dir)
+    tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
 
     return model, tokenizer
 
