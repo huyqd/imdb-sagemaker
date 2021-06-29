@@ -1,8 +1,12 @@
 import io
 import json
+import subprocess
+import sys
 
 import pandas as pd
 import torch
+subprocess.check_call([sys.executable, "-m", "pip", "install", "transformers==4.5.0"])
+
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 
