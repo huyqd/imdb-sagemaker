@@ -31,9 +31,15 @@ if __name__ == "__main__":
         predictions = torch.argmax(logits, dim=1).detach().cpu().numpy()
 
     print("Creating classification evaluation report")
-    report_dict = classification_report(y_test, predictions, output_dict=True)
-    report_dict["accuracy"] = accuracy_score(y_test, predictions)
-    report_dict["roc_auc"] = roc_auc_score(y_test, predictions)
+    report_dict = {"binary_classification_metrics": {
+        "accuracy": {
+            "value": accuracy_score(y_test, predictions),
+            "standard_deviation": "NaN"
+        },
+        "roc_auc": {
+            "value": roc_auc_score(y_test, predictions),
+            "standard_deviation": "NaN"
+        }}}
 
     print("Classification report:\n{}".format(report_dict))
 
