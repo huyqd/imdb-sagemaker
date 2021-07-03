@@ -87,6 +87,7 @@ if __name__ == "__main__":
         per_device_eval_batch_size=args.eval_batch_size,
         warmup_steps=args.warmup_steps,
         evaluation_strategy="epoch",
+        logging_strategy="epoch",
         logging_dir=f"{args.output_data_dir}/logs",
         learning_rate=float(args.learning_rate),
     )
