@@ -30,6 +30,7 @@ if __name__ == "__main__":
     with torch.no_grad():
         logits = model(input_ids=ii_test, attention_mask=am_test).logits
         sm = torch.softmax(logits, dim=1).detach().cpu().numpy()
+        sm = sm[:, 1]
         predictions = torch.argmax(logits, dim=1).detach().cpu().numpy()
 
     print("Creating classification evaluation report")
@@ -62,12 +63,12 @@ if __name__ == "__main__":
                 "standard_deviation": "NaN",
             },
             "receiver_operating_characteristic_curve": {
-                "false_positive_rates": fpr,
-                "true_positive_rates": tpr,
+                "false_positive_rates": fpr.tolist(),
+                "true_positive_rates": tpr.tolist(),
             },
             "precision_recall_curve": {
-                "precisions": precision,
-                "recalls": recall,
+                "precisions": precision.tolist(),
+                "recalls": recall.tolist(),
             },
         }
     }

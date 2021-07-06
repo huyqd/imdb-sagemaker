@@ -26,20 +26,21 @@ if __name__ == "__main__":
 
     # Load model and tokenizer
     model_name = 'distilbert-base-uncased'
-    model = DistilBertModel.from_pretrained(model_name)
+    distillbert = DistilBertModel.from_pretrained(model_name)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
+    distillbert.to(device)
     ii_test.to(device)
     am_test.to(device)
 
-    model.eval()
+    distillbert.eval()
     with torch.no_grad():
-        res = model(input_ids=ii_test, attention_mask=am_test)
+        res = distillbert(input_ids=ii_test, attention_mask=am_test)
     X_test = res['last_hidden_state'][:, 0].numpy()
 
     logits = model.predict_proba(X_test)
     sm = np.exp(logits) / np.sum(np.exp(logits))
+    sm = sm[:, 1]
     predictions = model.predict(X_test)
 
     print("Creating classification evaluation report")
@@ -72,12 +73,12 @@ if __name__ == "__main__":
                 "standard_deviation": "NaN",
             },
             "receiver_operating_characteristic_curve": {
-                "false_positive_rates": fpr,
-                "true_positive_rates": tpr,
+                "false_positive_rates": fpr.tolist(),
+                "true_positive_rates": tpr.tolist(),
             },
             "precision_recall_curve": {
-                "precisions": precision,
-                "recalls": recall,
+                "precisions": precision.tolist(),
+                "recalls": recall.tolist(),
             },
         }
     }
