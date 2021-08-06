@@ -41,7 +41,7 @@ def input_fn(request_body, request_content_type):
 
 def predict_fn(input_data, model):
     model, tokenizer = model
-    features = dict(tokenizer(input_data['text'].tolist(), truncation=True, padding="max_length", return_tensors='tf'))
+    features = dict(tokenizer(input_data, truncation=True, padding="max_length", return_tensors='tf'))
 
     logits = model.predict(features).logits
     
